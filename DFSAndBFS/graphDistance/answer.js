@@ -13,8 +13,6 @@ class PriorityQueue {
   }
 
   swap(id0, id1) {
-    console.log(id0, id1);
-    console.log(this._heap[id0], this._heap[id1]);
     const tmp = this._heap[id0]
     this._heap[id0] = this._heap[id1]
     this._heap[id1] = tmp
@@ -33,7 +31,6 @@ class PriorityQueue {
       }
       // compare with parent
       const parentId = Math.floor((itemId - 1) / 2)
-      console.log(parentId)
       result = this._comparer(item, this._heap[parentId])
 
       // swap with parent
@@ -95,15 +92,8 @@ class PriorityQueue {
   }
 }
 
-/*
-  0
-  1       2
-  3   4   5   6
-  7 8 9 9 1 2 3 4
-*/
-
 const t = new PriorityQueue()
-a = [100, 7,12,1,2,3,5,8,7,6]
+a = [12, 11, 10, 9, 1, 2, 3, 4, 8, 7, 5, 6]
 a.forEach(t.push.bind(t))
 
 for (let i = 0; i < a.length; i++) {
@@ -111,44 +101,54 @@ for (let i = 0; i < a.length; i++) {
 }
 
 function graphDistances(g, s) {
-  // create tree
-  const nodes = []
-  g.forEach((row, y) => {
-    row.forEach((edgeWeight, x) => {
-      // create object if doesn't exist
-      nodes[y] = nodes[y] || {}
-
-      // if no weight exist store it as it is
-      const sameXY = x === y
-      if (sameXY) {
-        nodes[y][x] = 0
-        return
-      }
-
-      if (edgeWeight === -1) {
-        nodes[y][x] = Number.MAX_SAFE_INTEGER
-        return
-      }
-      nodes[y][x] = edgeWeight
-    })
-  })
-
   // do djikstra
-  const result = []
-  for (let i = 0; i < g.length; i++) {
-    if (i === s) {
-      result[i] = 0
+
+  // get edges from s
+  // push all of them in priority queue
+  // break until all g.length filled
+
+  const DEFAULT_MIN = -1
+
+  // store the min costs for every node reachable from s
+  const mins = new Array(g.length).fill(DEFAULT_MIN)
+  const pq = new PriorityQueue((a, b) => a.cost < b.cost)
+  const visitedIds = new Set()
+
+  const pushNodeEdgesToQueue = nodeId => {
+    g[nodeId].forEach((edge, id) => {
+      // ignore the edge if no edge exist (-1)
+      if (edge === -1) {
+        return
+      }
+
+      // add accumulated cost (mins[nodeId] + edge)
+      pq.push({ to: id, cost: (mins[nodeId] === DEFAULT_MIN ? 0 : mins[nodeId]) + edge })
+    })
+  }
+
+  // mark current is defined
+  mins[s] = 0
+  visitedIds.add(s)
+  pushNodeEdgesToQueue(s)
+
+  // exit the queue only until all children are exhausted or
+  // all the edges distance to every node is filled
+  while (pq.length > 0 && visitedIds.size < g.length) {
+    const curr = pq.pop()
+    if (visitedIds.has(curr.to)) {
       continue
     }
 
+    // only fill the empty ones
+    if (mins[curr.to] === DEFAULT_MIN) {
+      mins[curr.to] = curr.cost
+    }
 
+    visitedIds.add(curr.to)
+    pushNodeEdgesToQueue(curr.to)
   }
 
-  const djikstra = () => {
-    // create priorityQueue
-  }
-
-  return Object.keys(nodes[s]).sort().map(key => nodes[s][key])
+  return mins
 }
 
 g = [[-1, 3, 2],
@@ -161,4 +161,10 @@ g2 = [[-1, 1, 2],
 [0, 0, -1]]
 // expected output for graphDistances(g2, 1) = [0, 0, 2]
 
-console.log(graphDistances(g, 0));
+g3 = [[-1, 3, 2, -1],
+[3, -1, -1, 1],
+[2, -1, -1, 3],
+[-1, 1, 3, -1]]
+// expected output of (g, 3) = [4, 1, 3, 0]
+
+console.log(graphDistances(g3, 3));
