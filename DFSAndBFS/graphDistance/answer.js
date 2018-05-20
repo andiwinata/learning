@@ -171,18 +171,32 @@ console.log(graphDistances(g3, 3));
 console.timeEnd("1");
 
 // below is top leaderboard result in codefights and time measurement
+// this has been modified and commented out to make it clearer
 const graphDistances2 = (g, s) => {
-  d = Array(g.length).fill(31)
+  // fill the array with random number (should be big enough),
+  // since it is only being used to take advantage Math.min
+  mins = Array(g.length).fill(31)
+
+  // create queue of indexes
   q = [...g.keys()]
-  for (d[s] = 0; q.length; )
-      for (e in g[n = q.sort((a, b) => d[b] - d[a]).pop()]) {
-          if (g[n][e] < 0)
-              continue
-          d[e] = Math.min(g[n][e] + d[n], d[e])
-      }
-  return d
+
+  // loop until queue finish
+  for (mins[s] = 0; q.length;) {
+    // sort the queue by largest cost to smallest cost for visiting each node (g[y])
+    // then take the smallest one index, and start branching from there
+    const y = q.sort((a, b) => mins[b] - mins[a]).pop()
+
+    for (let x in g[y]) {
+      if (g[y][x] < 0)
+        continue
+
+      // add accumulated cost, just make sure it is smaller than the cost from other node
+      mins[x] = Math.min(g[y][x] + mins[y], mins[x])
+    }
+  }
+  return mins
 }
 
 console.time("2");
-console.log(graphDistances2(g3, 3));
+console.log(graphDistances2(g, 0));
 console.timeEnd("2");
