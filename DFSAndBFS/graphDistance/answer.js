@@ -166,5 +166,23 @@ g3 = [[-1, 3, 2, -1],
 [2, -1, -1, 3],
 [-1, 1, 3, -1]]
 // expected output of (g, 3) = [4, 1, 3, 0]
-
+console.time("1");
 console.log(graphDistances(g3, 3));
+console.timeEnd("1");
+
+// below is top leaderboard result in codefights and time measurement
+const graphDistances2 = (g, s) => {
+  d = Array(g.length).fill(31)
+  q = [...g.keys()]
+  for (d[s] = 0; q.length; )
+      for (e in g[n = q.sort((a, b) => d[b] - d[a]).pop()]) {
+          if (g[n][e] < 0)
+              continue
+          d[e] = Math.min(g[n][e] + d[n], d[e])
+      }
+  return d
+}
+
+console.time("2");
+console.log(graphDistances2(g3, 3));
+console.timeEnd("2");
