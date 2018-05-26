@@ -5,6 +5,7 @@ function rotateImage(a) {
     // rotate in place all 4 points
     // a.length - i * 2 - 1 coming from -> 2 of the sides has been taken by i, hence i * 2
     // then the -1 for the total of rotating cycle for 4 points in top right bottom left
+    // TO EDIT: this can also (j = i; j < a.length - 1 - i)
     for (let j = 0; j < a.length - i * 2 - 1; j++) {
       // swap point 1->2->3->4->1
       const topLeftY = i
