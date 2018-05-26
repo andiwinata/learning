@@ -1,7 +1,7 @@
 function rotateImage(a) {
   // [cos a   -sin a]    [x]
   // [sin a    cos a]    [y]
-  // x' = x cos a - y sin y
+  // x' = x cos a - y sin a
   // y' = x sin a + y cos a
   // rotate -90, so do rotate 90 instead to just get the result in that position
   // x' = -y
