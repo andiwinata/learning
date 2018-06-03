@@ -31,6 +31,36 @@ function combinationSum(arr, sum) {
   return res.length > 0 ? res.map(x => `(${x.join(' ')})`).join('') : 'Empty'
 }
 
+function combinationSum1Loop(arr, sum) {
+  a = [...new Set(arr)].sort()
+
+  const res = []
+  const trySum = (id, total, seq) => {
+    if (total === sum) {
+      res.push(seq)
+      return true
+    }
+
+    let iResult
+    for (let i = id; i < a.length; i++) {
+      const arrNum = a[i]
+      const nextTotal = total + arrNum
+      if (nextTotal > sum) {
+        break
+      }
+      // if iResult returns true, it means the seq has exceeding the sum
+      // no point to keep traversing
+      if (iResult) {
+        break
+      }
+      iResult = trySum(i, nextTotal, [...seq, arrNum])
+    }
+  }
+
+  trySum(0, 0, [])
+  return res.length > 0 ? res.map(x => `(${x.join(' ')})`).join('') : 'Empty'
+}
+
 a = [2, 3, 5, 9]
 sum = 9
 // combinationSum(a, sum) = "(2 2 2 3)(2 2 5)(3 3 3)(9)"
