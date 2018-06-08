@@ -15,6 +15,14 @@ function classifyStringsWrong(s) {
   return 'good'
 }
 
+function classifyStringsRegexWrong2(s) {
+  const badReg = /.*([aeiou]{3}|[bcdfghjklmnpqrstvwxyz]{5}).*/
+  const mixedReg = /.*([aeiou?]{3}|[bcdfghjklmnpqrstvwxyz?]{5}).*/
+  if (badReg.test(s)) return 'bad'
+  if (mixedReg.test(s)) return 'mixed'
+  return 'good';
+}
+
 function classifyStringsNotWorking(s) {
   const badReg = /[aiueo]{3}|[^aiueo]{5}/
   const mixedReg = /(?=.{0,2}\?)[aeiou?]{3}|(?=.{0,4}\?)[^aeiou]{5}/

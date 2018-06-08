@@ -7,7 +7,7 @@
 // [c4,v1,c5,v1,c5]       [c4,v1,c3,v1,c1,v1,c5]           [c3,v2,c5,v1,c5]       [c3,v2,c3,v1,c1,v1,c5]
 // bad                    bad                              bad                    bad
 
-function classifyStrings(s) {
+function classifyStringsWithSubstring(s) {
   let mixed = false
   const vowels = new Set(['a', 'i', 'u', 'e', 'o'])
 
@@ -52,6 +52,44 @@ function classifyStrings(s) {
   return 'mixed'
 }
 
+function classifyStrings(s) {
+  const vowels = new Set(['a', 'i', 'u', 'e', 'o'])
+  const res = new Set()
+
+  const traverse = (startIndex, vCount, cCount, char) => {
+    for (let i = startIndex; i < s.length; i++) {
+      if (char === '?') {
+        // replace current char (which is '?') with vowel
+        traverse(i, vCount, cCount, 'a')
+        // replace current char (which is '?') with consonant
+        traverse(i, vCount, cCount, 'b')
+        break
+      }
+
+      if (vowels.has(char)) {
+        vCount++
+        cCount = 0
+      } else {
+        cCount++
+        vCount = 0
+      }
+
+      if (vCount >= 3 || cCount >= 5) {
+        res.add('bad')
+        break
+      }
+      if (i === s.length - 1) {
+        res.add('good')
+      }
+      char = s.charAt(i + 1) // change to next char
+    }
+  }
+
+  traverse(0, 0, 0, s.charAt(0))
+  if (res.size === 1) return res.values().next().value
+  return 'mixed'
+}
+
 s1 = "aeu"
 // classifyStrings(s) = "bad";
 s2 = "a?u"
@@ -70,15 +108,14 @@ s6 = 'ei?'
 // mixed
 s7 = 'c?b'
 // good
-
 s12 = 'typ?asdf?relkhfd'
 // bad
 
-// console.log(classifyStrings(s1));
-// console.log(classifyStrings(s2));
-// console.log(classifyStrings(s3));
-// console.log(classifyStrings(s4));
-// console.log(classifyStrings(s5));
-// console.log(classifyStrings(s6));
-// console.log(classifyStrings(s7));
-// console.log(classifyStrings(s12));
+console.log(classifyStrings(s1));
+console.log(classifyStrings(s2));
+console.log(classifyStrings(s3));
+console.log(classifyStrings(s4));
+console.log(classifyStrings(s5));
+console.log(classifyStrings(s6));
+console.log(classifyStrings(s7));
+console.log(classifyStrings(s12));
