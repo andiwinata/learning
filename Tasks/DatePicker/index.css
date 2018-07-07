@@ -1,0 +1,45 @@
+:root {
+  --dayWidth: 48px;
+  --calendarWidth: calc(var(--dayWidth) * 7);
+}
+
+.container {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.calendar {
+  display: flex;
+  flex-wrap: wrap;
+  width: var(--calendarWidth);
+}
+
+.day, .dayName {
+  width: var(--dayWidth);
+  height: var(--dayWidth);
+}
+
+.dayName {
+  display: inline-block;
+}
+
+.yearWrap {
+  display: flex;
+  width: var(--calendarWidth);
+  justify-content: space-between;
+  height: var(--dayWidth);
+}
+
+.yearText {
+  flex-grow: 2;
+  flex-basis: 70%;
+  text-align: center;
+  line-height: var(--dayWidth);
+}
+
+.navigateMonth {
+  height: 100%;
+}
