@@ -24,6 +24,8 @@
 
 .dayName {
   display: inline-block;
+  line-height: var(--dayWidth);
+  text-align: center;
 }
 
 .yearWrap {
@@ -42,4 +44,8 @@
 
 .navigateMonth {
   height: 100%;
+}
+
+.disabled.disabled {
+  cursor: default;
 }

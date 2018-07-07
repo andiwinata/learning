@@ -1,14 +1,16 @@
 
 const DEFAULT_DATE = new Date()
 const TOTAL_DAY_IN_WEEK = 7
+const DAY_NAME_MAPPING = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 // events onMonthChange (can also be onYearChange)
 // 
 
-const createDayNumber = ({ date }) => {
+const createDayNumber = ({ dayNum, disabled = false }) => {
   const el = document.createElement('button')
-  el.classList.add('day', 'button')
-  el.innerHTML = date
+  el.classList.add('day', 'button', ...disabled ? ['disabled'] : [])
+  el.disabled = disabled
+  el.innerHTML = dayNum
   return el
 }
 
@@ -19,18 +21,26 @@ const createDayName = ({ dayName }) => {
   return el
 }
 
-const createDates = ({ dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] }) => {
-  if (dayNames.length !== TOTAL_DAY_IN_WEEK) {
-    throw new Error(`Total of day must be ${TOTAL_DAY_IN_WEEK}`)
-  }
+const createDates = ({ day,
+  dayNames,
+  firstDate,
+  lastDate,
+}) => {
   const datesWrapper = document.createElement('div')
 
-  dayNames.forEach(dayName => {
+  DAY_NAME_MAPPING.forEach(dayName => {
     datesWrapper.appendChild(createDayName({ dayName }))
   })
 
-  Array.from({ length: TOTAL_DAY_IN_WEEK * 5 }, (x, i) => i + 1).forEach(date => {
-    const dateEl = createDayNumber({ date })
+  Array.from({ length: TOTAL_DAY_IN_WEEK * 5 }, (x, i) => i + 1).forEach(idDate => {
+    let disabled = false
+    if (idDate < firstDate || idDate > lastDate) {
+      disabled = true
+    }
+    const dateEl = createDayNumber({
+      dayNum: !disabled ? idDate - firstDate + 1: '',
+      disabled,
+    })
     datesWrapper.appendChild(dateEl)
   })
 
@@ -64,7 +74,7 @@ const createYearMonth = ({ month, year, monthNames = [
 
   const yearText = document.createElement('span')
   yearText.classList.add('yearText')
-  yearText.innerText = `${month} - ${year}`
+  yearText.innerText = `${monthNames[month]} - ${year}`
 
   yearWrap.appendChild(prevMonthBtn)
   yearWrap.appendChild(yearText)
@@ -73,7 +83,13 @@ const createYearMonth = ({ month, year, monthNames = [
   return yearWrap
 }
 
-const createCalendar = () => {
+const createCalendar = ({
+  year,
+  month,
+  day,
+  firstDate,
+  lastDate,
+}) => {
   // create calendar container if doesn't exist
   // auto add it to the body
   let calendarContainer = document.getElementById('calendar')
@@ -86,15 +102,37 @@ const createCalendar = () => {
 
   // create year and month elements with its wrapper
   calendarContainer.appendChild(createYearMonth({
-    year: 2018,
+    year,
+    month,
   }))
 
   // create dates and its wrapper
-  calendarContainer.appendChild(createDates({}))
+  calendarContainer.appendChild(createDates({
+    day,
+    firstDate,
+    lastDate,
+  }))
 
   return calendarContainer
 }
 
-createCalendar()
+const init = () => {
+  const year = DEFAULT_DATE.getFullYear()
+  const month = DEFAULT_DATE.getMonth()
+  const day = DEFAULT_DATE.getDay()
 
+  // get first and last day of month
+  const firstDate = new Date(year, month, 1).getDate()
+  const lastDate = new Date(year, month + 1, 0).getDate()
+
+  createCalendar({
+    year,
+    month,
+    day,
+    firstDate,
+    lastDate
+  })
+}
+
+init()
 
