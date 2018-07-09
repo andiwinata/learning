@@ -4,7 +4,7 @@
 }
 
 .container {
-  height: 100vh;
+  height: 50vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -48,4 +48,13 @@
 
 .disabled.disabled {
   cursor: default;
+}
+
+.active {
+  background: rgb(37, 115, 218);
+  color: #fff;
+}
+
+.active:hover {
+  color: #fff;
 }
