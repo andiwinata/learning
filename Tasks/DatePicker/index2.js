@@ -18,43 +18,6 @@ function createCalendar({
   containerElement,
 }) {
   const storeUpdatedEvent = new Event('storeUpdated')
-  const createStore = initialState => {
-    let state = initialState
-    return {
-      getState() {
-        return state
-      },
-      setState(newState) {
-        state = { ...state, ...newState }
-        document.dispatchEvent('storeUpdated', { state })
-      }
-    }
-  }
-
-  const shallowEqual = (a, b) => {
-    const keysA = Object.keys(a)
-    const keysB = Object.keys(b)
-    
-    if (keysA.length !== keysB.length) return false
-    return keysA.every(keyA => a[keyA] === b[keyA])
-  }
-
-  const subscribeToStore = mapStateToProps => update => {
-    let prevProps
-    document.addEventListener('storeUpdate', e => {
-      const props = mapStateToProps(e.state)
-      if (shallowEqual(props, prevProps)) {
-        return
-      }
-      
-      prevProps = props
-      update(props)
-    })
-  }
-
-  const State = {
-    selectedDate: new Date(initialDate),
-  }
 
   const DOMUtils = {
     makeElement: ({ type, classNames = [], attributes = {}, events = {}, children = [] }) => {
@@ -78,19 +41,71 @@ function createCalendar({
 
   const Utils = {
     generateDayNumbers: ({ year, month }) => {
-      const firstDate = new Date(year, month, 1).getDate()
+      const offset = new Date(year, month, 1).getDay()
       const lastDate = new Date(year, month + 1, 0).getDate()
 
-      return Array.from({ length: 7 * 5 }, (x, i) => i + 1)
-        .map(dayId =>
-          // return empty if day index is less than first date
-          dayId < firstDate || dayId > lastDate ? undefined : dayId - firstDate + 1
+      return Array.from({ length: 8 * 5 }, (x, i) => i)
+        .map(id =>
+          id < offset || id - offset + 1 > lastDate ? undefined : id - offset + 1
         )
     },
     formatDate: (date) => {
       return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`
+    },
+    getYearMonthDate: date => ({
+      year: date.getFullYear(),
+      month: date.getMonth(),
+      date: date.getDate(),
+    }),
+    notValid: x => x === undefined || x === null,
+    shallowEqual: (a, b) => {
+      if (Utils.notValid(a) || Utils.notValid(b)) {
+        if (Utils.notValid(a) !== Utils.notValid(b)) {
+          return false
+        }
+
+        return false
+      }
+      const keysA = Object.keys(a)
+      const keysB = Object.keys(b)
+
+      if (keysA.length !== keysB.length) return false
+      return keysA.every(keyA => a[keyA] === b[keyA])
+    },
+  }
+
+  const createStore = initialState => {
+    let state = initialState
+    return {
+      getState() {
+        return { ...state }
+      },
+      setState(newState) {
+        state = { ...state, ...newState }
+        document.dispatchEvent(storeUpdatedEvent)
+      },
+      subscribeToStore: mapStateToProps => update => {
+        let prevProps
+        document.addEventListener('storeUpdated', () => {
+          const props = mapStateToProps(state)
+          if (Utils.shallowEqual(props, prevProps)) {
+            return
+          }
+
+          prevProps = props
+          update(props)
+        })
+      }
     }
   }
+
+  const store = createStore({
+    selectedDate: new Date(initialDate),
+  })
+
+  // TODO: 
+  // - can be more efficient updating yearMonth
+  // - event delegation
 
   const createUpdateableComponent = renderFn => props => {
     let el
@@ -194,8 +209,10 @@ function createCalendar({
     ),
   }
 
-  const createInitialWrapper = () => ({
-    input: DOMUtils.makeElement({
+  const mapSTPDate = (st) => ({ selectedDate: st.selectedDate })
+
+  const initInput = () => {
+    const input = DOMUtils.makeElement({
       type: 'input',
       attributes: {
         name: 'date-input',
@@ -203,47 +220,117 @@ function createCalendar({
         id: 'date-input'
       },
       classNames: ['input'],
-    }),
-    calendarWrapper: DOMUtils.makeElement({
-      type: 'div',
-      classNames: ['calendar'],
-    }),
-  })
+    })
+    const state = store.getState()
 
-  const init = () => {
-    const year = State.selectedDate.getFullYear()
-    const month = State.selectedDate.getMonth()
-    const date = State.selectedDate.getDate()
+    input.value = Utils.formatDate(state.selectedDate)
+    store.subscribeToStore(mapSTPDate)(props => {
+      input.value = Utils.formatDate(props.selectedDate)
+    })
 
-    const fragment = document.createDocumentFragment()
+    return input
+  }
 
-    const { input, calendarWrapper } = createInitialWrapper()
-    input.value = Utils.formatDate(State.selectedDate)
+  const initYearMonth = () => {
+    // create listeners
+    const prevMonthOnClick = () => {
+      const currentSelectedDate = store.getState().selectedDate
+      // jump to previous day in last month
+      store.setState({
+        selectedDate: new Date(
+          currentSelectedDate.getFullYear(),
+          currentSelectedDate.getMonth(),
+          0,
+        )
+      })
+    }
 
-    // create YearMonth
+    const nextMonthOnClick = () => {
+      const currentSelectedDate = store.getState().selectedDate
+      // jump to first day in next month
+      store.setState({
+        selectedDate: new Date(
+          currentSelectedDate.getFullYear(),
+          currentSelectedDate.getMonth() + 1,
+          1,
+        )
+      })
+    }
+
+    // create YearMonthElement
+    const state = store.getState()
+    const { year, month, date } = Utils.getYearMonthDate(state.selectedDate)
     const yearMonth = Component.YearMonth({
       year,
       month,
-      prevMonthOnClick: () => { console.log('prev clicked') },
-      nextMonthOnClick: () => { console.log('next clicked') },
+      prevMonthOnClick,
+      nextMonthOnClick,
     })
 
-    // create Days
+    // create subscribers
+    store.subscribeToStore(mapSTPDate)(props => {
+      const { year, month } = Utils.getYearMonthDate(props.selectedDate)
+      yearMonth.update({ year, month, prevMonthOnClick, nextMonthOnClick })
+    })
+
+    return yearMonth
+  }
+
+  const initDays = () => {
+    const state = store.getState()
+    const { year, month, date } = Utils.getYearMonthDate(state.selectedDate)
+
+    const onClickFactory = num => e => {
+      const state = store.getState()
+      const { year, month } = Utils.getYearMonthDate(state.selectedDate)
+
+      store.setState({
+        selectedDate: new Date(year, month, num)
+      })
+    }
+
     const days = Component.Days({
       year, month, date,
-      onClickFactory: function factory(num) {
-        return e => {
-          State.selectedDate = new Date(year, month, num)
-
-          input.value = Utils.formatDate(State.selectedDate)
-          days.update({ year, month, num, onClickFactory: factory })
-        }
-      },
+      onClickFactory,
     })
+
+    store.subscribeToStore(mapSTPDate)(props => {
+      const { year, month, date } = Utils.getYearMonthDate(props.selectedDate)
+      days.update({ year, month, date, onClickFactory })
+    })
+
+    return days
+  }
+
+  const init = () => {
+    const fragment = document.createDocumentFragment()
+    const calendarWrapper = DOMUtils.makeElement({
+      type: 'div',
+      classNames: ['calendar'],
+    })
+    const input = initInput()
+
+    // create yearMonth
+    const yearMonth = initYearMonth()
+
+    // create dayNames
+    const dayNamesElement = dayNames.map(dayName => DOMUtils.makeElement({
+      type: 'div',
+      classNames: ['dayName'],
+      attributes: {
+        textContent: dayName
+      },
+    }))
+
+    // create days
+    const days = initDays()
 
     fragment.appendChild(input)
     fragment.appendChild(calendarWrapper)
     calendarWrapper.appendChild(yearMonth.el)
+    dayNamesElement.forEach(el => {
+      calendarWrapper.appendChild(el)
+    })
     calendarWrapper.appendChild(days.el)
 
     containerElement.appendChild(fragment)
